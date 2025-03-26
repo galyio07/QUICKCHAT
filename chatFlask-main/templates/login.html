@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prijava</title>
+</head>
+<body>
+    <h2>Prijava</h2>
+    <form method="POST">
+        <input type="text" name="username" placeholder="Uporabniško ime" required>
+        <input type="password" name="password" placeholder="Geslo" required>
+        <button type="submit">Prijavi se</button>
+    </form>
+    <a href="{{ url_for('register') }}">Nimate računa? Registrirajte se</a>
+</body>
+</html>

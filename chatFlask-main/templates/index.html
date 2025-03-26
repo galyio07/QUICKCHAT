@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preprost Klepet - Admin Panel</title>
+    <style>
+        body {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: white;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .admin-container {
+            background: white;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 800px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 20px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .admin-header span {
+            font-weight: bold;
+        }
+
+        .admin-actions {
+            padding: 15px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .search-bar {
+            padding: 10px 20px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+        }
+
+        .tab-container {
+            padding: 0 20px;
+        }
+
+        .tab-buttons {
+            display: flex;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .tab-button {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-weight: bold;
+        }
+
+        .tab-button.active {
+            color: #6366f1;
+            border-bottom: 2px solid #6366f1;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 10px 0;
+            height: 300px;
+            overflow-y: auto;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .message {
+            background: #f0f0f0;
+            border-radius: 5px;
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            position: relative;
+        }
+
+        .message .username {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .message .content {
+            margin-top: 5px;
+        }
+
+        .message .timestamp {
+            font-size: 0.8em;
+            color: #777;
+            text-align: right;
+        }
+        
+        .message .delete-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: #ff4c4c;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .user-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        .user-item .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-item .username {
+            font-weight: bold;
+        }
+
+        .user-item .last-active {
+            font-size: 0.8em;
+            color: #777;
+        }
+
+        button {
+            background: #6366f1;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #bd8c30;
+        }
+
+        button.danger {
+            background: #ff4c4c;
+        }
+
+        button.danger:hover {
+            background: #ff1a1a;
+        }
+
+        button.secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        button.secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .logout-btn {
+            background: none;
+            border: none;
+            color: #6366f1;
+            cursor: pointer;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Preprost Klepet - Admin Panel</h1>
+    
+    <div class="admin-container">
+        <div class="admin-header">
+            <span>Pozdravljen, <span id="username">admin</span>!</span>
+            <button class="logout-btn" onclick="logout()">Odjava</button>
+        </div>
+        
+        <div class="admin-actions">
+            <button class="danger" onclick="confirmClearAllMessages()">Izbriši vsa sporočila</button>
+            <button onclick="navigateToChat()">Nazaj na klepet</button>
+        </div>
+        
+        <div class="search-bar">
+            <input type="text" placeholder="Išči sporočila..." id="searchInput" onkeyup="searchMessages()">
+        </div>
+        
+        <div class="tab-container">
+            <div class="tab-buttons">
+                <button class="tab-button active" onclick="openTab('messages')">Sporočila</button>
+                <button class="tab-button" onclick="openTab('users')">Uporabniki</button>
+            </div>
+            
+            <div id="messages" class="tab-content active">
+                <!-- Messages will be loaded here -->
+            </div>
+            
+            <div id="users" class="tab-content">
+                <!-- Users will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load data when page loads
+        window.onload = function() {
+            loadMessages();
+            loadUsers();
+        };
+
+        function openTab(tabName) {
+            // Hide all tab contents
+            let tabContents = document.getElementsByClassName('tab-content');
+            for (let i = 0; i < tabContents.length; i++) {
+                tabContents[i].classList.remove('active');
+            }
+            
+            // Remove active class from tab buttons
+            let tabButtons = document.getElementsByClassName('tab-button');
+            for (let i = 0; i < tabButtons.length; i++) {
+                tabButtons[i].classList.remove('active');
+            }
+            
+            // Show selected tab content
+            document.getElementById(tabName).classList.add('active');
+            
+            // Add active class to clicked button
+            event.currentTarget.classList.add('active');
+        }
+
+        async function loadMessages() {
+            try {
+                let response = await fetch('/messages');
+                let messages = await response.json();
+                displayMessages(messages);
+            } catch (error) {
+                console.error('Error loading messages:', error);
+            }
+        }
+
+        function displayMessages(messages) {
+            let messagesTab = document.getElementById('messages');
+            messagesTab.innerHTML = '';
+            
+            if (messages.length === 0) {
+                messagesTab.innerHTML = '<p>Ni najdenih sporočil.</p>';
+                return;
+            }
+            
+            messages.forEach(msg => {
+                let messageDiv = document.createElement('div');
+                messageDiv.className = 'message';
+                messageDiv.innerHTML = `
+                    <div class="username">${msg.username}</div>
+                    <div class="content">${msg.content || msg.message}</div>
+                    <div class="timestamp">${msg.timestamp}</div>
+                    <button class="delete-btn" onclick="deleteMessage('${msg.id}')">✕</button>
+                `;
+                messagesTab.appendChild(messageDiv);
+            });
+        }
+
+        async function loadUsers() {
+            try {
+                let response = await fetch('/users');
+                let users = await response.json();
+                displayUsers(users);
+            } catch (error) {
+                console.error('Error loading users:', error);
+                // If API not available, show fallback message
+                document.getElementById('users').innerHTML = '<p>Napaka pri nalaganju uporabnikov. API morda še ni na voljo.</p>';
+            }
+        }
+
+        function displayUsers(users) {
+            let usersTab = document.getElementById('users');
+            usersTab.innerHTML = '';
+            
+            if (users.length === 0) {
+                usersTab.innerHTML = '<p>Ni najdenih uporabnikov.</p>';
+                return;
+            }
+            
+            users.forEach(user => {
+                let userDiv = document.createElement('div');
+                userDiv.className = 'user-item';
+                userDiv.innerHTML = `
+                    <div class="user-info">
+                        <span class="username">${user.username}</span>
+                        <span class="last-active">Zadnja aktivnost: ${user.lastActive}</span>
+                    </div>
+                    <button class="danger" onclick="removeUser('${user.id}')">Odstrani uporabnika</button>
+                `;
+                usersTab.appendChild(userDiv);
+            });
+        }
+
+        async function searchMessages() {
+            let keyword = document.getElementById('searchInput').value.trim();
+            
+            if (keyword) {
+                try {
+                    let response = await fetch(`/search_messages?keyword=${keyword}`);
+                    let messages = await response.json();
+                    displayMessages(messages);
+                } catch (error) {
+                    console.error('Error searching messages:', error);
+                }
+            } else {
+                loadMessages();
+            }
+        }
+
+        async function deleteMessage(messageId) {
+            if (confirm('Ali ste prepričani, da želite izbrisati to sporočilo?')) {
+                try {
+                    let response = await fetch(`/delete_message/${messageId}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    let result = await response.json();
+                    if (result.success) {
+                        loadMessages();
+                    } else {
+                        alert('Napaka pri brisanju sporočila!');
+                    }
+                } catch (error) {
+                    console.error('Error deleting message:', error);
+                }
+            }
+        }
+
+        async function confirmClearAllMessages() {
+            if (confirm('Ali ste prepričani, da želite izbrisati VSA sporočila? Tega dejanja ni mogoče razveljaviti!')) {
+                try {
+                    let response = await fetch('/clear_messages', {
+                        method: 'POST'
+                    });
+                    
+                    let result = await response.json();
+                    if (result.success) {
+                        alert('Vsa sporočila so bila uspešno izbrisana!');
+                        loadMessages();
+                    } else {
+                        alert('Napaka pri brisanju sporočil!');
+                    }
+                } catch (error) {
+                    console.error('Error clearing messages:', error);
+                }
+            }
+        }
+
+        async function removeUser(userId) {
+            if (confirm('Ali ste prepričani, da želite odstraniti tega uporabnika iz klepeta?')) {
+                try {
+                    let response = await fetch(`/remove_user/${userId}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    let result = await response.json();
+                    if (result.success) {
+                        alert('Uporabnik je bil uspešno odstranjen!');
+                        loadUsers();
+                    } else {
+                        alert('Napaka pri odstranjevanju uporabnika!');
+                    }
+                } catch (error) {
+                    console.error('Error removing user:', error);
+                }
+            }
+        }
+
+        function navigateToChat() {
+            // Fixed path to the chat page - using root path instead of '/chat'
+            window.location.href = '/';
+        }
+
+        function logout() {
+            window.location.href = '/logout';
+        }
+    </script>
+</body>
+</html>
